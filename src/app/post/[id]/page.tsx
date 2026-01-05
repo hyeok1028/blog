@@ -1,12 +1,22 @@
-// src/app/post/[id]/page.tsx
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation"; // redirect 추가
-import { deletePost } from "@/lib/actions"; // 1. 이 줄을 꼭 추가해야 합니다!
+import { notFound, redirect } from "next/navigation";
+import { deletePost } from "@/lib/actions";
+
+// 마크다운 및 코드 하이라이팅 관련 라이브러리
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+import type { PrismTheme } from "react-syntax-highlighter";
+import type { CSSProperties } from "react";
 
 export const dynamic = "force-dynamic";
+
+// ✅ 핵심: style 타입을 확정 (오버로드/union 문제 방지)
+const prismStyle = vscDarkPlus as unknown as Record<string, CSSProperties>;
 
 export default async function PostDetailPage({
   params,
@@ -17,16 +27,14 @@ export default async function PostDetailPage({
   const resolvedParams = await params;
   const postId = Number(resolvedParams.id);
 
-  // ... (중간 디버깅 로그 및 조회 로직은 동일) ...
+  if (!Number.isFinite(postId)) notFound();
 
   const post = await prisma.post.findUnique({
     where: { id: postId },
     include: { author: true },
   });
 
-  if (!post) {
-    notFound();
-  }
+  if (!post) notFound();
 
   return (
     <div className="max-w-4xl mx-auto p-10">
@@ -43,19 +51,17 @@ export default async function PostDetailPage({
               {post.title}
             </h1>
 
-            {/* 관리자 도구 */}
             {session?.user?.role === "ADMIN" && (
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" asChild>
                   <Link href={`/admin/post/${post.id}`}>수정/관리</Link>
                 </Button>
 
-                {/* 2. 삭제 폼 수정: 버튼이 반드시 form 안에 있어야 합니다. */}
                 <form
                   action={async () => {
                     "use server";
                     await deletePost(post.id);
-                    redirect("/"); // 삭제 후 홈으로 이동
+                    redirect("/");
                   }}
                 >
                   <Button variant="destructive" size="sm" type="submit">
@@ -65,7 +71,7 @@ export default async function PostDetailPage({
               </div>
             )}
           </div>
-          {/* ... 나머지 메타데이터 및 본문 영역 동일 ... */}
+
           <div className="flex items-center text-slate-500 text-sm gap-4">
             <span className="font-medium text-slate-700">
               작성자: {post.author.email}
@@ -75,8 +81,38 @@ export default async function PostDetailPage({
           </div>
         </header>
 
-        <div className="prose prose-slate max-w-none text-slate-700 leading-relaxed whitespace-pre-wrap">
-          {post.content}
+        <div className="prose prose-slate max-w-none text-slate-700 leading-relaxed">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              code({ className, children, ...props }) {
+                const match = /language-(\w+)/.exec(className || "");
+                const codeText = String(children).replace(/\n$/, "");
+
+                // ✅ react-markdown에서는 inline 구분이 애매할 수 있어
+                // language-xxx가 있으면 code block으로 취급하는 방식이 가장 안전
+                if (match) {
+                  return (
+                    <SyntaxHighlighter
+                      style={prismStyle}
+                      language={match[1]}
+                      PreTag="div"
+                    >
+                      {codeText}
+                    </SyntaxHighlighter>
+                  );
+                }
+
+                return (
+                  <code className={className} {...props}>
+                    {children}
+                  </code>
+                );
+              },
+            }}
+          >
+            {post.content}
+          </ReactMarkdown>
         </div>
       </article>
     </div>

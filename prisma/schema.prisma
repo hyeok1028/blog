@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  
 }
 
 // 회원 정보 (일반/관리자 구분)
@@ -15,28 +14,29 @@ model User {
   email         String    @unique
   emailVerified DateTime?
   image         String?
-  password      String?   // Email 로그인용 (Optional)
+  password      String? // Email 로그인용 (Optional)
   role          Role      @default(USER)
   accounts      Account[]
   sessions      Session[]
   posts         Post[]
+  likes         Like[]
   comments      Comment[]
 }
 
 // --- 아래는 Auth.js v5 필수 모델들입니다 ---
 model Account {
-  id                 String  @id @default(cuid())
-  userId             Int
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?  @db.Text
-  access_token       String?  @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?  @db.Text
-  session_state      String?
+  id                String  @id @default(cuid())
+  userId            Int
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -66,32 +66,44 @@ enum Role {
 
 // 게시글 (카테고리 분류 포함)
 model Post {
-  id          Int       @id @default(autoincrement())
-  title       String
-  content     String @db.Text
-  category    String    // JavaScript, TypeScript, React 등
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  authorId    Int
-  author      User      @relation(fields: [authorId], references: [id])
-  comments    Comment[]
+  id        Int       @id @default(autoincrement())
+  title     String
+  content   String    @db.Text
+  category  String // JavaScript, TypeScript, React 등
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  authorId  Int
+  author    User      @relation(fields: [authorId], references: [id])
+  likes     Like[] // 좋아요 관계 추가
+  comments  Comment[]
+}
+
+model Like {
+  id     Int  @id @default(autoincrement())
+  postId Int
+  userId Int
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId]) // 한 유저가 한 글에 좋아요 한 번만 가능
 }
 
 // 댓글 (답글 기능 포함)
 model Comment {
   id        Int       @id @default(autoincrement())
   content   String
+  createdAt DateTime  @default(now())
   postId    Int
-  post      Post      @relation(fields: [postId], references: [id])
   authorId  Int
+  parentId  Int? // 대댓글 기능을 위한 자기 참조
+  post      Post      @relation(fields: [postId], references: [id])
   author    User      @relation(fields: [authorId], references: [id])
-  parentId  Int?      // 대댓글 기능을 위한 자기 참조
   parent    Comment?  @relation("Reply", fields: [parentId], references: [id])
   replies   Comment[] @relation("Reply")
 }
 
 // 가이드 필수 사항: 불용어 테이블
 model StopWord {
-  id    Int    @id @default(autoincrement())
-  word  String @unique // 2글자 이상 단어 저장용
+  id   Int    @id @default(autoincrement())
+  word String @unique // 2글자 이상 단어 저장용
 }

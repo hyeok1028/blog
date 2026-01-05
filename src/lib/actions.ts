@@ -133,3 +133,75 @@ export async function deletePost(postId: number) {
     return { error: "삭제 중 오류가 발생했습니다." };
   }
 }
+/**
+ * 1. 좋아요 토글 (Toggle Like)
+ */
+export async function toggleLike(postId: number) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("로그인이 필요합니다.");
+
+  const userId = Number(session.user.id);
+
+  // 이미 좋아요를 눌렀는지 확인
+  const existingLike = await prisma.like.findUnique({
+    where: {
+      postId_userId: { postId, userId },
+    },
+  });
+
+  if (existingLike) {
+    await prisma.like.delete({ where: { id: existingLike.id } });
+  } else {
+    await prisma.like.create({ data: { postId, userId } });
+  }
+
+  revalidatePath(`/post/${postId}`);
+}
+
+/**
+ * 2. 댓글 및 대댓글 작성 (Create Comment/Reply)
+ */
+export async function createComment(
+  postId: number,
+  content: string,
+  parentId?: number
+) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("로그인이 필요합니다.");
+
+  await prisma.comment.create({
+    data: {
+      content,
+      postId,
+      authorId: Number(session.user.id),
+      parentId: parentId || null, // parentId가 있으면 대댓글이 됩니다.
+    },
+  });
+
+  revalidatePath(`/post/${postId}`);
+}
+
+/**
+ * 3. 댓글 삭제 (Delete Comment - 권한 체크 포함)
+ */
+export async function deleteComment(commentId: number) {
+  const session = await auth();
+  if (!session?.user) throw new Error("권한이 없습니다.");
+
+  const comment = await prisma.comment.findUnique({
+    where: { id: commentId },
+  });
+
+  if (!comment) return;
+
+  // 관리자이거나 본인이 작성한 댓글인 경우에만 삭제 가능
+  const isAdmin = session.user.role === "ADMIN";
+  const isAuthor = comment.authorId === Number(session.user.id);
+
+  if (isAdmin || isAuthor) {
+    await prisma.comment.delete({ where: { id: commentId } });
+    revalidatePath(`/post/${comment.postId}`);
+  } else {
+    throw new Error("삭제 권한이 없습니다.");
+  }
+}
