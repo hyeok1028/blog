@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  reactCompiler: true,
+	/* Next.js 16.1+ 에서 reactCompiler는 stable 옵션입니다 */
+	reactCompiler: true,
 };
 
 export default nextConfig;
