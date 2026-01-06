@@ -1,4 +1,3 @@
-// src/lib/actions.ts
 "use server";
 
 import bcrypt from "bcryptjs";
@@ -38,12 +37,10 @@ export async function registerUser(formData: FormData) {
 }
 
 /**
- * 2. 게시글 생성 액션 (관리자 전용)
+ * 2. 게시글 생성/수정/삭제 액션 (관리자 전용)
  */
 export async function createPost(formData: FormData) {
   const session = await auth();
-
-  // 보안: 관리자 권한 및 세션 확인
   if (session?.user?.role !== "ADMIN" || !session?.user?.id) {
     return { error: "관리자 권한이 없거나 로그인 정보가 없습니다." };
   }
@@ -61,26 +58,17 @@ export async function createPost(formData: FormData) {
         authorId: Number(session.user.id),
       },
     });
-
-    // 메인 페이지(잔디밭) 데이터 갱신
     revalidatePath("/");
     return { success: true };
   } catch (error) {
-    console.error("Prisma Error:", error);
     return { error: "게시글 저장 중 오류가 발생했습니다." };
   }
 }
 
-/**
- * 3. 게시글 수정 액션 (관리자 전용)
- */
 export async function updatePost(postId: number, formData: FormData) {
   const session = await auth();
-
-  // 관리자 권한 확인
-  if (session?.user?.role !== "ADMIN") {
+  if (session?.user?.role !== "ADMIN")
     return { error: "수정 권한이 없습니다." };
-  }
 
   const title = formData.get("title") as string;
   const content = formData.get("content") as string;
@@ -89,64 +77,40 @@ export async function updatePost(postId: number, formData: FormData) {
   try {
     await prisma.post.update({
       where: { id: postId },
-      data: {
-        title,
-        content,
-        category,
-        updatedAt: new Date(), // 수정 시간 갱신 (잔디밭 활동 기록에 반영됨)
-      },
+      data: { title, content, category, updatedAt: new Date() },
     });
-
-    // 관련 페이지 캐시 무효화
     revalidatePath("/");
     revalidatePath(`/post/${postId}`);
-    revalidatePath(`/category/${category}`);
-
     return { success: true };
   } catch (error) {
-    console.error("Update Error:", error);
     return { error: "글 수정 중 오류가 발생했습니다." };
   }
 }
 
-/**
- * 4. 게시글 삭제 액션 (관리자 전용)
- */
 export async function deletePost(postId: number) {
   const session = await auth();
-
-  // 관리자 권한 확인
-  if (session?.user?.role !== "ADMIN") {
+  if (session?.user?.role !== "ADMIN")
     return { error: "삭제 권한이 없습니다." };
-  }
 
   try {
-    await prisma.post.delete({
-      where: { id: postId },
-    });
-
-    // 삭제 후 데이터 동기화
+    await prisma.post.delete({ where: { id: postId } });
     revalidatePath("/");
     return { success: true };
   } catch (error) {
-    console.error("Delete Error:", error);
     return { error: "삭제 중 오류가 발생했습니다." };
   }
 }
+
 /**
- * 1. 좋아요 토글 (Toggle Like)
+ * 3. 좋아요 토글
  */
 export async function toggleLike(postId: number) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("로그인이 필요합니다.");
 
   const userId = Number(session.user.id);
-
-  // 이미 좋아요를 눌렀는지 확인
   const existingLike = await prisma.like.findUnique({
-    where: {
-      postId_userId: { postId, userId },
-    },
+    where: { postId_userId: { postId, userId } },
   });
 
   if (existingLike) {
@@ -154,12 +118,11 @@ export async function toggleLike(postId: number) {
   } else {
     await prisma.like.create({ data: { postId, userId } });
   }
-
   revalidatePath(`/post/${postId}`);
 }
 
 /**
- * 2. 댓글 및 대댓글 작성 (Create Comment/Reply)
+ * 4. 댓글 작성 및 수정
  */
 export async function createComment(
   postId: number,
@@ -174,34 +137,60 @@ export async function createComment(
       content,
       postId,
       authorId: Number(session.user.id),
-      parentId: parentId || null, // parentId가 있으면 대댓글이 됩니다.
+      parentId: parentId || null,
     },
   });
-
   revalidatePath(`/post/${postId}`);
 }
 
+// 댓글 수정 액션
+export async function updateComment(commentId: number, content: string) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("로그인이 필요합니다.");
+
+  const comment = await prisma.comment.findUnique({ where: { id: commentId } });
+  if (!comment) return;
+
+  const isAuthor = comment.authorId === Number(session.user.id);
+  if (!isAuthor) throw new Error("수정 권한이 없습니다.");
+
+  await prisma.comment.update({
+    where: { id: commentId },
+    data: {
+      content,
+      updatedAt: new Date(), // ✅ 이거 넣어줘야 UI에서 "수정됨/수정일"이 확실해짐
+    },
+  });
+
+  revalidatePath(`/post/${comment.postId}`);
+}
+
 /**
- * 3. 댓글 삭제 (Delete Comment - 권한 체크 포함)
+ * 5. 댓글 삭제 (관리자/사용자 차별화 로직)
  */
 export async function deleteComment(commentId: number) {
   const session = await auth();
-  if (!session?.user) throw new Error("권한이 없습니다.");
+  if (!session?.user?.id) throw new Error("권한이 없습니다.");
 
-  const comment = await prisma.comment.findUnique({
-    where: { id: commentId },
-  });
-
+  const comment = await prisma.comment.findUnique({ where: { id: commentId } });
   if (!comment) return;
 
-  // 관리자이거나 본인이 작성한 댓글인 경우에만 삭제 가능
+  const userId = Number(session.user.id);
   const isAdmin = session.user.role === "ADMIN";
-  const isAuthor = comment.authorId === Number(session.user.id);
+  const isAuthor = comment.authorId === userId;
 
-  if (isAdmin || isAuthor) {
+  // 관리자 + 타인의 댓글 → 소프트 삭제
+  if (isAdmin && !isAuthor) {
+    await prisma.comment.update({
+      where: { id: commentId },
+      data: { content: "삭제된 댓글입니다" },
+    });
+  } else if (isAuthor) {
+    // 본인 댓글 → 하드 삭제
     await prisma.comment.delete({ where: { id: commentId } });
-    revalidatePath(`/post/${comment.postId}`);
   } else {
     throw new Error("삭제 권한이 없습니다.");
   }
+
+  revalidatePath(`/post/${comment.postId}`);
 }

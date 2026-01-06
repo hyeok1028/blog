@@ -20,7 +20,7 @@ export default function CategorySidebar({
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
       <Link href="/" className="block">
-        <h1 className="text-2xl font-bold text-emerald-700">HanaLog</h1>
+        <h1 className="text-2xl font-bold text-emerald-700">Hanaog</h1>
         <p className="text-xs text-slate-500 mt-1">hanaro</p>
       </Link>
 
@@ -58,7 +58,7 @@ export default function CategorySidebar({
                 }}
                 className="mt-2 px-3 py-2 rounded-lg text-left text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition border border-transparent hover:border-slate-200"
               >
-                + ADD Category
+                + Add Category
               </button>
 
               {open && (

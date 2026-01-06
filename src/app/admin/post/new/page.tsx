@@ -1,72 +1,18 @@
-// src/app/admin/post/new/page.tsx
-"use client";
+// 1. 중괄호를 사용한 Named Import로 수정
+import { prisma } from "@/lib/prisma";
+import PostForm from "./PostForm";
 
-import { createPost } from "@/lib/actions";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
+export default async function NewPostPage() {
+  // DB에서 카테고리 목록을 가져옵니다.
+  // prisma.category.findMany가 반환하는 타입을 TypeScript가 인식하도록 합니다.
+  const categoryData = await prisma.category.findMany({
+    select: { name: true },
+    orderBy: { name: "asc" },
+  });
 
-export default function NewPostPage() {
-  const router = useRouter();
-  const categories = ["JavaScript", "TypeScript", "React", "Next.js", "MySQL"];
+  // 2. 'c'의 타입을 명시하거나, 화살표 함수에서 타입을 지정합니다.
+  // categoryData는 { name: string }[] 형태이므로 c는 { name: string }입니다.
+  const categoryNames = categoryData.map((c: { name: string }) => c.name);
 
-  async function handleSubmit(formData: FormData) {
-    const result = await createPost(formData);
-    if (result.success) {
-      alert("글이 등록되었습니다!");
-      router.push("/"); // 메인으로 이동하여 잔디 확인
-    } else {
-      alert(result.error);
-    }
-  }
-
-  return (
-    <div className="p-10 max-w-4xl mx-auto">
-      <Card>
-        <CardHeader>
-          <CardTitle>새 기술 포스트 작성</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form action={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label>제목</Label>
-              <Input
-                name="title"
-                placeholder="기술 주제를 입력하세요"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>카테고리</Label>
-              <select
-                name="category"
-                className="w-full border p-2 rounded-md"
-                required
-              >
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label>내용</Label>
-              <textarea
-                name="content"
-                className="w-full min-h-[300px] border p-4 rounded-md"
-                placeholder="Markdown 또는 일반 텍스트로 내용을 작성하세요"
-                required
-              />
-            </div>
-            <Button type="submit" className="w-full">
-              포스트 발행하기
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
-  );
+  return <PostForm categories={categoryNames} />;
 }

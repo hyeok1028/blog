@@ -12,7 +12,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "hanaro 기술 블로그",
-  description: "Next.js 16으로 만든 개인 블로그",
+  description: "개인 기술 블로그 만들기 프로젝트",
 };
 
 export default async function RootLayout({
@@ -21,6 +21,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
+
   const categoryRows = await prisma.category.findMany({
     orderBy: { name: "asc" },
     select: { name: true },
@@ -31,10 +32,8 @@ export default async function RootLayout({
     <html lang="ko">
       <body className={inter.className}>
         <div className="min-h-screen bg-slate-50">
-          {/* 전체 컨테이너: 화면 비율 따라 여백/간격 자동 */}
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
             <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-6 md:gap-10">
-              {/* 사이드바 */}
               <aside className="md:sticky md:top-6 h-fit">
                 <CategorySidebar
                   categories={categories}
@@ -42,9 +41,7 @@ export default async function RootLayout({
                 />
               </aside>
 
-              {/* 메인 */}
               <div className="min-w-0 flex flex-col">
-                {/* 상단 헤더 */}
                 <header className="h-16 bg-white border border-slate-200 rounded-2xl px-6 flex items-center justify-end shadow-sm">
                   {session ? (
                     <div className="flex items-center gap-4">
@@ -59,17 +56,27 @@ export default async function RootLayout({
                       )}
                     </div>
                   ) : (
-                    <Button
-                      size="sm"
-                      asChild
-                      className="bg-emerald-600 hover:bg-emerald-700"
+                    // ✅ Sign up / Sign in 탭 UI
+                    <nav
+                      aria-label="Auth navigation"
+                      className="inline-flex items-center rounded-full border border-slate-200 bg-white p-1 shadow-sm"
                     >
-                      <Link href="/login">로그인</Link>
-                    </Button>
+                      <Link
+                        href="/register"
+                        className="rounded-full px-4 py-1.5 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 transition"
+                      >
+                        Sign up
+                      </Link>
+                      <Link
+                        href="/login"
+                        className="rounded-full px-4 py-1.5 text-sm font-semibold text-slate-500 hover:text-slate-700 transition"
+                      >
+                        Sign in
+                      </Link>
+                    </nav>
                   )}
                 </header>
 
-                {/* 콘텐츠 */}
                 <main className="flex-1 mt-6">{children}</main>
               </div>
             </div>
