@@ -1,5 +1,7 @@
 // src/app/layout.tsx
 import type { Metadata } from "next";
+import { prisma } from "@/lib/prisma";
+import CategorySidebar from "@/components/CategorySidebar";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { auth } from "@/auth";
@@ -19,7 +21,11 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
-  const categories = ["JavaScript", "TypeScript", "React", "Next.js", "MySQL"];
+  const categoryRows = await prisma.category.findMany({
+    orderBy: { name: "asc" },
+    select: { name: true },
+  });
+  const categories = categoryRows.map((c) => c.name);
 
   return (
     <html lang="ko">
@@ -30,40 +36,10 @@ export default async function RootLayout({
             <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-6 md:gap-10">
               {/* 사이드바 */}
               <aside className="md:sticky md:top-6 h-fit">
-                <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-                  <Link href="/" className="block">
-                    <h1 className="text-2xl font-bold text-emerald-700">
-                      HanaLog
-                    </h1>
-                    <p className="text-xs text-slate-500 mt-1">hanaro</p>
-                  </Link>
-
-                  <div className="mt-6">
-                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
-                      Categories
-                    </p>
-
-                    <nav className="mt-3 flex flex-col gap-1">
-                      {/* 전체보기: 앞으로 /all로 보낼 거면 여기만 /all로 바꾸면 됨 */}
-                      <Link
-                        href="/all"
-                        className="px-3 py-2 rounded-lg text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition"
-                      >
-                        전체보기
-                      </Link>
-
-                      {categories.map((cat) => (
-                        <Link
-                          key={cat}
-                          href={`/category/${encodeURIComponent(cat)}`}
-                          className="px-3 py-2 rounded-lg text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 transition"
-                        >
-                          {cat}
-                        </Link>
-                      ))}
-                    </nav>
-                  </div>
-                </div>
+                <CategorySidebar
+                  categories={categories}
+                  isAdmin={session?.user?.role === "ADMIN"}
+                />
               </aside>
 
               {/* 메인 */}

@@ -10,7 +10,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
-import type { PrismTheme } from "react-syntax-highlighter";
+// import type { PrismTheme } from "react-syntax-highlighter";
 import type { CSSProperties } from "react";
 
 export const dynamic = "force-dynamic";

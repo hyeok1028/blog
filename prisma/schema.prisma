@@ -7,7 +7,7 @@ datasource db {
 }
 
 // 회원 정보 (일반/관리자 구분)
-// User 모델 수정 (Auth.js 연동용 필드 추가)
+// User (Auth.js 연동용 필드 추가)
 model User {
   id            Int       @id @default(autoincrement())
   name          String?
@@ -23,7 +23,6 @@ model User {
   comments      Comment[]
 }
 
-// --- 아래는 Auth.js v5 필수 모델들입니다 ---
 model Account {
   id                String  @id @default(cuid())
   userId            Int
@@ -101,6 +100,16 @@ model Comment {
   parent    Comment?  @relation("Reply", fields: [parentId], references: [id])
   replies   Comment[] @relation("Reply")
 }
+
+// 카테고리 테이블
+model Category {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+
+  @@index([name])
+}
+
 
 // 가이드 필수 사항: 불용어 테이블
 model StopWord {

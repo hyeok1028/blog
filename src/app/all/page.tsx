@@ -1,4 +1,6 @@
+// 전체보기
 // src/app/all/page.tsx
+
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { redirect } from "next/navigation";
