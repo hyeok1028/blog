@@ -65,7 +65,7 @@ export function CommentItem({
                 {new Date(comment.createdAt).toLocaleString()}
               </span>
 
-              {/* ✅ 수정됨 + hover 시 수정일 툴팁 */}
+              {/* 수정됨 + hover 시 수정일 툴팁 */}
               {isEdited && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -84,7 +84,7 @@ export function CommentItem({
             </div>
           </div>
 
-          {/* ✅ 액션 버튼들 */}
+          {/* 액션 버튼 */}
           {canManage && (
             <div className="flex items-center gap-2">
               {/* 수정 버튼: 본인만(관리자라도 타인 댓글을 수정하게 할지 정책에 따라) */}
@@ -131,7 +131,7 @@ export function CommentItem({
           {comment.content}
         </p>
 
-        {/* ✅ 수정 폼 */}
+        {/* 수정 폼 */}
         {editOpen &&
           currentUserId != null &&
           currentUserId === comment.authorId &&
@@ -172,7 +172,7 @@ export function CommentItem({
             </form>
           )}
 
-        {/* ✅ 답글(대댓글 포함) 폼: 삭제된 댓글에는 숨김 */}
+        {/* 답글(대댓글 포함) 폼: 삭제된 댓글에는 숨김 */}
         {!isDeleted && currentUserId != null && (
           <div className="mt-3">
             <button
@@ -192,7 +192,7 @@ export function CommentItem({
                       formData.get("content") || ""
                     ).trim();
                     if (!content) return;
-                    await createComment(postId, content, comment.id); // ✅ 대댓글에도 답글 가능
+                    await createComment(postId, content, comment.id); // 대댓글에도 답글 가능
                     setReplyOpen(false);
                   });
                 }}

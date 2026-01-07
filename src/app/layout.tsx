@@ -22,11 +22,38 @@ export default async function RootLayout({
 }) {
   const session = await auth();
 
-  const categoryRows = await prisma.category.findMany({
+  // ✅ 전체 게시글 수
+  const totalCountPromise = prisma.post.count();
+
+  // ✅ 카테고리 목록(정렬)
+  const categoriesPromise = prisma.category.findMany({
     orderBy: { name: "asc" },
     select: { name: true },
   });
+
+  const [totalCount, categoryRows] = await Promise.all([
+    totalCountPromise,
+    categoriesPromise,
+  ]);
+
   const categories = categoryRows.map((c) => c.name);
+
+  // ✅ 카테고리별 게시글 개수 (groupBy는 Post.category 기준)
+  //    Category 테이블에 존재하지만 Post가 0개인 카테고리도 표시하려면 0으로 보정.
+  const postCounts = await prisma.post.groupBy({
+    by: ["category"],
+    _count: { _all: true },
+  });
+
+  const countMap = new Map<string, number>();
+  for (const row of postCounts) {
+    countMap.set(row.category, row._count._all);
+  }
+
+  const categoryCounts = categories.map((name) => ({
+    name,
+    count: countMap.get(name) ?? 0,
+  }));
 
   return (
     <html lang="ko">
@@ -36,7 +63,9 @@ export default async function RootLayout({
             <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-6 md:gap-10">
               <aside className="md:sticky md:top-6 h-fit">
                 <CategorySidebar
-                  categories={categories}
+                  // ✅ 변경: counts 포함
+                  categories={categoryCounts}
+                  totalCount={totalCount}
                   isAdmin={session?.user?.role === "ADMIN"}
                 />
               </aside>
@@ -56,7 +85,6 @@ export default async function RootLayout({
                       )}
                     </div>
                   ) : (
-                    // ✅ Sign up / Sign in 탭 UI
                     <nav
                       aria-label="Auth navigation"
                       className="inline-flex items-center rounded-full border border-slate-200 bg-white p-1 shadow-sm"

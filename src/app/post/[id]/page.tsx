@@ -1,4 +1,5 @@
 // src/app/post/[id]/page.tsx
+// 게시글 상세 페이지
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import Link from "next/link";
@@ -92,7 +93,7 @@ export default async function PostDetailPage({
       <article className="bg-white p-8 rounded-2xl shadow-sm border">
         <header className="mb-8 pb-8 border-b">
           <div className="flex justify-between items-start gap-4 mb-4">
-            <h1 className="text-4xl font-extrabold text-slate-900 leading-tight">
+            <h1 className="text-2xl font-extrabold text-slate-900 leading-tight">
               {post.title}
             </h1>
 

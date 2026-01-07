@@ -14,6 +14,7 @@ import {
   LogOut,
   PlusCircle,
   Tag,
+  ArrowRight,
 } from "lucide-react";
 
 export default async function HomePage({
@@ -24,13 +25,51 @@ export default async function HomePage({
   const session = await auth();
   const { q } = await searchParams;
 
+  // ✅ 비로그인 시 보여줄 모던 랜딩 페이지
   if (!session) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
-        <h1 className="text-4xl font-black text-slate-900 mb-2">hanaro.log</h1>
-        <Button asChild size="lg" className="rounded-full px-10 shadow-lg">
-          <Link href="/login">시작하기</Link>
-        </Button>
+      <div className="relative flex flex-col items-center min-h-[calc(100vh-64px)] bg-white overflow-hidden">
+        {/* pt-24 같은 큰 여백 대신 헤더와의 거리를 위해 pt-10 정도로 설정 */}
+        <div className="relative z-10 flex flex-col items-center text-center px-6 pt-10">
+          {/* 배지와의 간격도 살짝 줄임 (mb-8 -> mb-4) */}
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold tracking-tight mb-4">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            HanaLog Beta
+          </div>
+
+          {/* 메인 타이틀 (회원가입 페이지 문구와 통일) */}
+          <h1 className="text-5xl md:text-7xl font-black text-slate-900 tracking-tighter leading-[1.1] mb-6">
+            Share your <br />
+            <span className="text-emerald-600 underline decoration-emerald-100 decoration-8 underline-offset-4">
+              Knowledge.
+            </span>
+          </h1>
+
+          {/* 서브 설명 */}
+          <p className="max-w-md text-lg text-slate-500 font-medium leading-relaxed mb-10">
+            꾸준함이 힘이다. <br />
+            복잡한 설정 없이 기술적 여정을 기록하세요.
+          </p>
+
+          {/* 시작하기 버튼 (모던 스타일) */}
+          <Button
+            asChild
+            size="lg"
+            className="h-16 px-12 rounded-2xl bg-slate-900 hover:bg-emerald-600 text-white font-bold text-xl transition-all shadow-xl hover:shadow-emerald-500/20 group"
+          >
+            <Link href="/login" className="flex items-center gap-2">
+              시작하기{" "}
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </Button>
+
+          {/* 하단 장식용 텍스트 */}
+          <div className="mt-20 flex gap-8 text-[11px] font-black text-slate-300 uppercase tracking-[0.2em]">
+            <span>Markdown</span>
+            <span>Category</span>
+            <span>Community</span>
+          </div>
+        </div>
       </div>
     );
   }

@@ -1,3 +1,13 @@
+// 잔디밭 그래프 컴포넌트
+// "잔디밭 그래프"는 GitHub의 기여도 그래프와 유사한 형태로, 사용자의 활동량을 시각적으로 표현합니다.
+// 이 컴포넌트는 주어진 날짜별 활동 데이터를 바탕으로, 각 날짜에 해당하는 칸의 색상을 결정하고,
+// 마우스 오버 시 툴팁을 통해 상세 정보를 제공합니다.
+// 활동량에 따라 5단계의 레벨로 구분하며, 각 레벨에 맞는 색상 팔레트를 적용합니다.
+// 배경이 흰색인 경우를 위한 색상 팔레트를 사용하며, 필요에 따라 다른 배경용 팔레트도 추가할 수 있습니다.
+// 또한, 월과 요일 라벨을 표시하여 사용자가 날짜를 쉽게 인식할 수 있도록 돕습니다.
+// 하단에는 활동량 범례를 제공하여 각 색상이 의미하는 활동량 수준을 안내합니다.
+// 필요에 따라 레벨 기준 안내 문구도 포함할 수 있습니다.
+// src/components/ContributionGraph.tsx
 "use client";
 
 import * as React from "react";
@@ -10,7 +20,7 @@ import {
 
 interface Props {
   activityData: Record<string, number>; // "YYYY-MM-DD" -> count
-  daysToShow?: number; // 기본 365
+  daysToShow?: number; // default : 365
 }
 
 const MONTHS = [

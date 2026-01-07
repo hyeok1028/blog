@@ -78,3 +78,6 @@ db_data/
 # Docker
 ############################
 docker-data/
+
+*storybook.log
+storybook-static

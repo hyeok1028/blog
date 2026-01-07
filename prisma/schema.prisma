@@ -50,6 +50,14 @@ model Session {
   @@index([userId], map: "Session_userId_fkey")
 }
 
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
 model Post {
   id        Int       @id @default(autoincrement())
   title     String

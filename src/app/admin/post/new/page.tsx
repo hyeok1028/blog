@@ -1,4 +1,4 @@
-// 1. 중괄호를 사용한 Named Import로 수정
+// 중괄호를 사용한 Named Import로 수정
 import { prisma } from "@/lib/prisma";
 import PostForm from "./PostForm";
 
@@ -10,7 +10,7 @@ export default async function NewPostPage() {
     orderBy: { name: "asc" },
   });
 
-  // 2. 'c'의 타입을 명시하거나, 화살표 함수에서 타입을 지정합니다.
+  // 'c'의 타입을 명시하거나, 화살표 함수에서 타입을 지정합니다.
   // categoryData는 { name: string }[] 형태이므로 c는 { name: string }입니다.
   const categoryNames = categoryData.map((c: { name: string }) => c.name);
 

@@ -45,7 +45,7 @@ export default function PostForm({ categories }: { categories: string[] }) {
                 className="w-full border p-2 rounded-md"
                 required
               >
-                {/* 하드코딩 대신 props로 받은 categories 사용 */}
+                {/* props로 받은 categories */}
                 {categories.map((cat) => (
                   <option key={cat} value={cat}>
                     {cat}

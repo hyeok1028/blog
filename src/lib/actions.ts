@@ -11,6 +11,7 @@ import { Role } from "@prisma/client";
  * 1. 유저 회원가입 액션
  */
 export async function registerUser(formData: FormData) {
+  const name = formData.get("name") as string;
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
   const roleInput = formData.get("role") as string;
@@ -158,7 +159,7 @@ export async function updateComment(commentId: number, content: string) {
     where: { id: commentId },
     data: {
       content,
-      updatedAt: new Date(), // ✅ 이거 넣어줘야 UI에서 "수정됨/수정일"이 확실해짐
+      updatedAt: new Date(), // 수정 시간 업데이트
     },
   });
 

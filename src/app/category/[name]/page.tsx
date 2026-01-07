@@ -1,11 +1,27 @@
 // src/app/category/[name]/page.tsx
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/auth"; // 세션 확인을 위해 추가
+import { auth } from "@/auth";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import Link from "next/link";
-import { Heart, MessageCircle } from "lucide-react"; // 아이콘 추가
+// ✅ Hash와 Plus를 임포트 목록에 추가했습니다.
+import {
+  Heart,
+  MessageCircle,
+  Clock,
+  Calendar,
+  ChevronRight,
+  Hash,
+  Plus,
+} from "lucide-react";
 
 export const dynamic = "force-dynamic";
+
+// 읽기 소요 시간 계산 함수
+function getReadTime(content: string) {
+  const wordsPerMinute = 200;
+  const minutes = Math.ceil(content.length / wordsPerMinute);
+  return minutes;
+}
 
 export default async function CategoryBoardPage({
   params,
@@ -18,7 +34,6 @@ export default async function CategoryBoardPage({
   const resolvedParams = await params;
   const categoryName = decodeURIComponent(resolvedParams.name);
 
-  // likes와 comments를 포함하여 조회
   const posts = await prisma.post.findMany({
     where: { category: categoryName },
     orderBy: { createdAt: "desc" },
@@ -30,84 +45,102 @@ export default async function CategoryBoardPage({
   });
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-slate-800">
-          {categoryName} 게시판
-        </h2>
-        <p className="text-slate-500 mt-2">
-          총 {posts.length}개의 포스트가 있습니다.
-        </p>
-      </div>
+    <div className="p-8 max-w-6xl mx-auto space-y-10">
+      {/* 상단 헤더 섹션 */}
+      <header className="relative py-12 px-8 rounded-3xl bg-slate-900 overflow-hidden text-white shadow-2xl">
+        <div className="absolute top-0 right-0 -mt-20 -mr-20 w-80 h-80 bg-emerald-500/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-60 h-60 bg-emerald-600/10 rounded-full blur-2xl" />
 
-      <div className="grid gap-6">
+        <div className="relative z-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-bold mb-4">
+            {/* ✅ 직접 만든 Hash 대신 lucide 아이콘 사용 */}
+            <Hash className="w-3 h-3" aria-hidden="true" />
+            Category
+          </div>
+          <h2 className="text-4xl font-black tracking-tight mb-2">
+            {categoryName} <span className="text-emerald-500">Board</span>
+          </h2>
+          <p className="text-slate-400 font-medium">
+            현재 <span className="text-white font-bold">{posts.length}</span>
+            개의 지식이 공유되고 있습니다.
+          </p>
+        </div>
+      </header>
+
+      {/* 게시글 리스트 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {posts.length > 0 ? (
           posts.map((post) => {
-            // 내가 좋아요를 눌렀는지 확인
             const isLikedByMe = post.likes.some(
               (l) => l.userId === currentUserId
             );
-            // 내가 댓글을 달았는지 확인
             const isCommentedByMe = post.comments.some(
               (c) => c.authorId === currentUserId
             );
+            const readTime = getReadTime(post.content);
 
             return (
-              <Link
-                href={`/post/${post.id}`}
-                key={post.id}
-                className="block group"
-              >
-                <Card className="hover:shadow-md transition-shadow cursor-pointer group-hover:border-emerald-400 relative">
-                  <CardHeader>
-                    <CardTitle className="group-hover:text-emerald-600 transition-colors">
+              <Link href={`/post/${post.id}`} key={post.id} className="group">
+                <Card className="h-full border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 rounded-3xl overflow-hidden bg-white">
+                  <CardHeader className="pb-4">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center gap-2 text-[11px] font-bold text-slate-400">
+                        <Calendar className="w-3 h-3" />
+                        {new Date(post.createdAt).toLocaleDateString()}
+                        <span className="mx-1">•</span>
+                        <Clock className="w-3 h-3" />약 {readTime}분 소요
+                      </div>
+                    </div>
+                    <CardTitle className="text-xl font-extrabold text-slate-900 group-hover:text-emerald-600 transition-colors line-clamp-1 leading-snug">
                       {post.title}
                     </CardTitle>
-                    <div className="flex gap-2 text-sm text-slate-400 mt-1">
-                      <span>작성자: {post.author.email}</span>
-                      <span>•</span>
-                      <span>
-                        {new Date(post.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
                   </CardHeader>
-                  <CardContent className="pb-12">
-                    {" "}
-                    {/* 하단 아이콘 공간 확보 */}
-                    <p className="text-slate-600 line-clamp-2">
-                      {post.content.substring(0, 150)}...
+
+                  <CardContent>
+                    <p className="text-slate-500 text-sm leading-relaxed line-clamp-3 mb-6">
+                      {post.content.replace(/[#*`]/g, "").substring(0, 180)}
                     </p>
-                    {/* 우측 하단 좋아요/댓글 상태 */}
-                    <div className="absolute bottom-4 right-6 flex items-center gap-4">
-                      <div
-                        className={`flex items-center gap-1.5 ${
-                          isLikedByMe ? "text-red-500" : "text-slate-400"
-                        }`}
-                      >
-                        <Heart
-                          className={`w-4 h-4 ${
-                            isLikedByMe ? "fill-red-500" : ""
-                          }`}
-                        />
-                        <span className="text-xs font-bold">
-                          {post.likes.length}
-                        </span>
+
+                    <div className="flex items-center justify-between pt-6 border-t border-slate-50">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 border border-slate-100">
+                          <Heart
+                            className={`w-3.5 h-3.5 ${
+                              isLikedByMe
+                                ? "fill-red-500 text-red-500"
+                                : "text-slate-400"
+                            }`}
+                          />
+                          <span
+                            className={`text-xs font-bold ${
+                              isLikedByMe ? "text-red-600" : "text-slate-500"
+                            }`}
+                          >
+                            {post.likes.length}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 border border-slate-100">
+                          <MessageCircle
+                            className={`w-3.5 h-3.5 ${
+                              isCommentedByMe
+                                ? "fill-emerald-500 text-emerald-500"
+                                : "text-slate-400"
+                            }`}
+                          />
+                          <span
+                            className={`text-xs font-bold ${
+                              isCommentedByMe
+                                ? "text-emerald-600"
+                                : "text-slate-500"
+                            }`}
+                          >
+                            {post.comments.length}
+                          </span>
+                        </div>
                       </div>
-                      <div
-                        className={`flex items-center gap-1.5 ${
-                          isCommentedByMe
-                            ? "text-emerald-500"
-                            : "text-slate-400"
-                        }`}
-                      >
-                        <MessageCircle
-                          className={`w-4 h-4 ${
-                            isCommentedByMe ? "fill-emerald-500" : ""
-                          }`}
-                        />
-                        <span className="text-xs font-bold">
-                          {post.comments.length}
-                        </span>
+
+                      <div className="flex items-center gap-1 text-emerald-600 font-bold text-xs group-hover:gap-2 transition-all">
+                        Read More <ChevronRight className="w-3 h-3" />
                       </div>
                     </div>
                   </CardContent>
@@ -116,9 +149,16 @@ export default async function CategoryBoardPage({
             );
           })
         ) : (
-          <div className="text-center py-20 border-2 border-dashed rounded-xl bg-white">
-            <p className="text-slate-400 text-lg">
-              아직 등록된 게시글이 없습니다.
+          <div className="col-span-full py-24 border-2 border-dashed border-slate-200 rounded-[40px] bg-white flex flex-col items-center justify-center text-center">
+            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+              {/* ✅ Plus 아이콘도 이제 정상적으로 인식됩니다. */}
+              <Plus className="w-8 h-8 text-slate-300" aria-hidden="true" />
+            </div>
+            <p className="text-slate-400 font-bold text-lg">
+              아직 등록된 지식이 없습니다.
+            </p>
+            <p className="text-slate-300 text-sm mt-1">
+              첫 번째 주인공이 되어보세요!
             </p>
           </div>
         )}

@@ -43,18 +43,14 @@ export default function LikeButton({
       ].join(" ")}
       disabled={disabled || isPending}
       onClick={() => {
-        // ✅ 즉시 UI 반영
+        // 즉시 UI 반영
         setOptimistic("toggle");
 
-        // ✅ 서버 반영은 transition으로 비동기 처리
+        // 서버 반영은 transition으로 비동기 처리
         startTransition(async () => {
           try {
             await toggleLike(postId);
-          } catch {
-            // 서버 실패 시 원복까지 하고 싶으면:
-            // setOptimistic("toggle");  // 한 번 더 토글해서 원복
-            // 여기서는 UX 단순화를 위해 생략 (원복 원하면 말해줘)
-          }
+          } catch {}
         });
       }}
       title={disabled ? "로그인이 필요합니다." : undefined}
